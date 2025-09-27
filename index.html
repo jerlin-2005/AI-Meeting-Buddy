@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Meeting Buddy</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f6f9; }
+    .form-step { display: none; margin: 20px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; max-width: 600px; background: #fff; }
+    .form-step.active { display: block; }
+    h2, h3 { text-align: center; color: #333; }
+    label { display: block; margin-top: 10px; }
+    input, select, button, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 5px; border: 1px solid #aaa; }
+    button { background: #007bff; color: white; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .result { background: #eef; padding: 10px; margin-top: 10px; border-radius: 5px; white-space: pre-wrap; }
+    #chat-box { height: 150px; overflow-y: auto; background: #f0f0f0; padding: 10px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<h2>🤖 AI Meeting Buddy</h2>
+
+<!-- Step 0: Login -->
+<div class="form-step active" id="step-0">
+  <h3>Login</h3>
+  <form onsubmit="return loginUser()">
+    <label>Username: <input type="text" id="username" required></label>
+    <label>Password: <input type="password" id="password" required></label>
+    <button type="submit">Login</button>
+  </form>
+</div>
+
+<!-- Step 1: Scheduling -->
+<div class="form-step" id="step-1">
+  <h3>Step 1: Schedule Meeting</h3>
+  <form onsubmit="return scheduleMeeting()">
+    <label>Date: 
+      <input type="date" id="meeting-date" required>
+    </label>
+    <label>Time: 
+      <input type="time" id="meeting-time" required>
+    </label>
+    <button type="submit">Book Slot</button>
+  </form>
+  <p id="scheduled-slot"></p>
+  <button onclick="nextStep(2)">Next</button>
+</div>
+
+<!-- Step 2: Agenda -->
+<div class="form-step" id="step-2">
+  <h3>Step 2: Agenda Preparation</h3>
+  <div id="agenda-div" class="result"></div>
+  <button onclick="nextStep(3)">Next</button>
+</div>
+
+<!-- Step 3: Reminders -->
+<div class="form-step" id="step-3">
+  <h3>Step 3: Reminders / Follow-ups</h3>
+  <form id="reminder-form" onsubmit="return addReminder()">
+    <input type="text" id="reminder-input" placeholder="Enter a new reminder..." required>
+    <button type="submit">Add Reminder</button>
+  </form>
+  <div id="reminders-div" class="result"></div>
+  <button onclick="nextStep(4)">Next</button>
+</div>
+
+<!-- Step 4: Chatbot -->
+<div class="form-step" id="step-4">
+  <h3>Step 4: AI Chatbot</h3>
+  <div id="chat-box"></div>
+  <form id="chat-form">
+    <input type="text" id="chat-input" placeholder="Ask something..." required>
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+// ---------- Mock Data ----------
+let ownerMeetings=[]; 
+let customerMeetings=[]; 
+let selectedSlot=null;
+
+const pastMeetings=[
+  {date:"2025-09-20",topic:"Q3 Sales Update",outcome:"Need more push in EU",conversation:["Discussed pricing","Follow-up on leads"]},
+  {date:"2025-09-22",topic:"Product Launch",outcome:"Positive feedback",conversation:[]}
+];
+const salesData=[
+  {product:"CRM Plus",customer:"Distributor A",licenses:20},
+  {product:"Mail Suite",customer:"Distributor B",licenses:15}
+];
+
+// ---------- Step Flow ----------
+function nextStep(step){
+  document.querySelectorAll(".form-step").forEach(f=>f.classList.remove("active"));
+  document.getElementById("step-"+step).classList.add("active");
+  if(step===2) document.getElementById("agenda-div").innerHTML=generateAgendaAI(selectedSlot?.date,selectedSlot?.time);
+  if(step===3) document.getElementById("reminders-div").innerHTML=generateReminders();
+}
+
+// ---------- Login ----------
+function loginUser(){
+  const u=document.getElementById("username").value;
+  const p=document.getElementById("password").value;
+  if((u==="admin"&&p==="pass123")||(u==="user1"&&p==="user123")||(u==="employee1"&&p==="emp123")){
+    nextStep(1); 
+    setMinDate(); 
+    return false;
+  } else { alert("Invalid login!"); return false; }
+}
+
+// ---------- Scheduling ----------
+function setMinDate(){
+  let today=new Date().toISOString().split("T")[0];
+  document.getElementById("meeting-date").setAttribute("min",today);
+}
+
+function scheduleMeeting(){
+  const date=document.getElementById("meeting-date").value;
+  const time=document.getElementById("meeting-time").value;
+
+  if(!date || !time){ alert("Please select both date and time."); return false; }
+
+  const selectedDateTime=new Date(date+"T"+time);
+  const now=new Date();
+  if(selectedDateTime < now){ alert("Cannot schedule in the past."); return false; }
+
+  // Check overlaps
+  const ownerBusy=ownerMeetings.some(m=>m.date===date && m.time===time);
+  const customerBusy=customerMeetings.some(m=>m.date===date && m.time===time);
+  if(ownerBusy || customerBusy){ alert("This slot is already booked."); return false; }
+
+  // Book slot
+  selectedSlot={date,time};
+  ownerMeetings.push({date,time});
+  customerMeetings.push({date,time});
+  document.getElementById("scheduled-slot").innerHTML=`✅ Slot booked: ${date} at ${time}`;
+  return false;
+}
+
+// ---------- Agenda ----------
+let reminders=[
+  {task:"Send sales report to Distributor A",due:new Date(new Date().getTime()+5000),source:"AI"},
+  {task:"Prepare presentation for next call",due:new Date(new Date().getTime()+10000),source:"AI"},
+];
+const pastChatReminders=[
+  {task:"Follow up with Distributor B on ERP request",due:new Date(new Date().getTime()+15000),source:"Chat"},
+];
+reminders.push(...pastChatReminders);
+
+function generateAgendaAI(date,time){
+  let agenda=`📅 AI-Generated Agenda\nDate: ${date}\nTime: ${time}\nPurpose: Vendor-Distributor Progress Meeting\n\n`;
+  agenda+="1️⃣ Review of Past Meetings:\n";
+  pastMeetings.forEach((m,i)=>{
+    agenda+=`   ${i+1}. "${m.topic}" → Outcome: ${m.outcome}\n`;
+    if(m.conversation && m.conversation.length>0){
+      m.conversation.forEach((conv,j)=>{ agenda+=`      • ${conv}\n`; });
+    }
+  });
+  agenda+="\n2️⃣ Sales & Product Updates:\n";
+  salesData.forEach((s,i)=>{ agenda+=`   ${i+1}. ${s.product} → ${s.customer} (${s.licenses} licenses)\n`; });
+  agenda+="\n3️⃣ Action Items & Follow-ups:\n";
+  reminders.forEach((r,i)=>{ agenda+=`   ${i+1}. ${r.task} (Due: ${r.due.toLocaleTimeString()})\n`; });
+  agenda+="\nNotes:\n- Allocate ~10 mins per item.\n- Confirm responsibilities.\n";
+  return agenda;
+}
+
+// ---------- Reminders ----------
+function generateReminders(){
+  let html="<strong>Reminders:</strong><ul>";
+  reminders.forEach((r,i)=>{
+    html+=`<li id="reminder-${i}">${r.task} (Due: ${r.due.toLocaleTimeString()}) [${r.source}] 
+           <button onclick="markDone(${i})">Done</button></li>`;
+    scheduleNotification(r,i);
+  });
+  html+="</ul>";
+  return html;
+}
+function addReminder(){
+  const input=document.getElementById("reminder-input");
+  const task=input.value.trim();
+  if(task){
+    const due=new Date(new Date().getTime()+20000);
+    reminders.push({task,due,source:"User"});
+    document.getElementById("reminders-div").innerHTML=generateReminders();
+    input.value="";
+  }
+  return false;
+}
+function markDone(i){
+  const li=document.getElementById(`reminder-${i}`);
+  li.style.textDecoration="line-through"; li.style.color="green";
+}
+function scheduleNotification(r,i){
+  let delay=r.due-new Date(); if(delay<0) delay=5000;
+  setTimeout(()=>{ if(Notification.permission==="granted"){ new Notification("Reminder: "+r.task); } },delay);
+}
+if("Notification" in window){ Notification.requestPermission(); }
+
+// ---------- Chatbot ----------
+document.getElementById("chat-form").addEventListener("submit",function(e){
+  e.preventDefault();
+  const q=document.getElementById("chat-input").value.trim();
+  if(q.length<3){ alert("Enter at least 3 characters."); return false; }
+  const chatBox=document.getElementById("chat-box");
+  let answer="I can help with meeting details.";
+  if(q.toLowerCase().includes("agenda")) answer=generateAgendaAI(selectedSlot?.date,selectedSlot?.time);
+  else if(q.toLowerCase().includes("reminder")||q.toLowerCase().includes("follow-up")) answer=generateReminders();
+  else answer="I can answer questions about scheduled meetings, agenda, and follow-ups.";
+  chatBox.innerHTML+=`You: ${q}\nAI Buddy: ${answer}\n\n`;
+  chatBox.scrollTop=chatBox.scrollHeight;
+  document.getElementById("chat-input").value="";
+  return false;
+});
+</script>
+</body>
+</html>

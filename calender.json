@@ -1,0 +1,19 @@
+{
+  "participants": [
+    {
+      "name": "Zoho Chennai",
+      "timezone_offset": 5.5,
+      "free_slots": ["09:00-11:00", "14:00-16:00"]
+    },
+    {
+      "name": "Distributor Germany",
+      "timezone_offset": 1,
+      "free_slots": ["08:00-10:00", "15:00-17:00"]
+    },
+    {
+      "name": "Manager US",
+      "timezone_offset": -7,
+      "free_slots": ["09:00-12:00"]
+    }
+  ]
+}

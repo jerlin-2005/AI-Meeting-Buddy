@@ -1,0 +1,26 @@
+:root{
+  --bg:#f4f7fb;
+  --card:#fff;
+  --accent:#0b6ef2;
+  --muted:#666;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,Arial; background:var(--bg); color:#111;}
+.container{max-width:980px;margin:28px auto;padding:20px;}
+h1{margin:0 0 6px}
+.subtitle{color:var(--muted);margin:0 0 14px}
+.card{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(20,30,40,0.06);margin:16px 0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+button:active{transform:translateY(1px)}
+.panel{background:#fafcff;border:1px solid #e8f0ff;padding:12px;border-radius:8px;margin-top:10px;min-height:40px}
+#slot-results .slot {padding:8px;border-radius:8px;margin:6px 0;border:1px dashed #dfeeff;background:#fff}
+#slot-results .slot strong{display:inline-block;width:240px}
+input[type="date"], input, select{padding:8px;border-radius:8px;border:1px solid #ddd}
+.chat-box{height:220px;overflow:auto;border:1px solid #eee;padding:10px;border-radius:8px;background:#fff}
+.msg{padding:6px;border-radius:6px;margin:6px 0;max-width:80%}
+.msg.user{align-self:flex-end;background:#e8f0ff;color:#023e8a;margin-left:auto;text-align:right}
+.msg.bot{background:#f1f8f4;color:#064e3b}
+.footer{margin-top:8px;color:var(--muted);text-align:center}
+small{color:var(--muted)}
+.badge{display:inline-block;background:#e7f3ff;color:#0353a4;padding:6px 8px;border-radius:20px;margin-left:6px}
